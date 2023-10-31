@@ -1,23 +1,38 @@
-import requests
-import time
+from aiogram import Bot, Dispatcher
+from aiogram.filters import Command
+from aiogram.types import Message
+from aiogram.types import ContentType
+from aiogram import F
 
-API_URL = 'https://api.telegram.org/bot'
 BOT_TOKEN = '6391999112:AAErYc8VNpkPYCLA1rUheh9AyrfRGaj8czA'
-TEXT = 'Ура! Классный апдейт!'
-MAX_COUNTER = 100
 
-offset = -2
-counter = 0
-chat_id: int
-while counter < MAX_COUNTER:
-    print('attempt =', counter) #Чтобы видеть в консоли, что код живет
+bot = Bot(token=BOT_TOKEN)
+dp = Dispatcher()
 
-    updates = requests.get(f'{API_URL}{BOT_TOKEN}/getUpdates?offset={offset + 1}').json()
 
-    if updates['result']:
-        for result in updates['result']:
-            offset = result['update_id']
-            chat_id = result['message']['from']['id']
-            requests.get(f'{API_URL}{BOT_TOKEN}/sendMessage?chat_id={chat_id}&text={TEXT}')
-    time.sleep(1)
-    counter += 1
+@dp.message(Command(commands='start'))
+async def process_start_command(message: Message):
+    await message.answer('Привет!\nМеня зовут Эхо-бот!\nНапиши мне что-нибудь')
+
+
+@dp.message(Command(commands='help'))
+async def process_help_command(message: Message):
+    await message.answer(
+        'Напиши мне что-нибудь и в ответ '
+        'я пришлю тебе твое сообщение'
+    )
+
+
+@dp.message()
+async def send_echo(message: Message):
+    try:
+        await message.send_copy(chat_id=message.chat.id)
+    except TypeError:
+        await message.answer(
+            text='Данный тип апдейтов не поддерживается '
+                 'методом send_copy'
+        )
+
+
+if __name__ == '__main__':
+    dp.run_polling(bot)
